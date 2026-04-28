@@ -2,6 +2,9 @@ package com.SupplementDistributor.SupplementDistributor.service;
 
 import com.SupplementDistributor.SupplementDistributor.dto.request.CreateUserRequestDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.response.UserResponseDTO;
+import com.SupplementDistributor.SupplementDistributor.exception.ResourceNotFoundException;
+import com.SupplementDistributor.SupplementDistributor.mapper.Mapper;
+import com.SupplementDistributor.SupplementDistributor.model.User;
 import com.SupplementDistributor.SupplementDistributor.repository.IUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,16 +22,37 @@ public class UserService implements IUserService{
 
     @Override
     public List<UserResponseDTO> getAllUsers() {
-        return List.of();
+        return userRepository.findAll()
+                .stream()
+                .map(Mapper::toDTO)
+                .toList();
     }
 
     @Override
     public UserResponseDTO getUserById(Long id) {
-        return null;
+        return Mapper.toDTO(findEntityById(id));
     }
 
     @Override
     public UserResponseDTO createUser(CreateUserRequestDTO request) {
-        return null;
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email already in use: " + request.getEmail());
+        }
+
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phone(request.getPhone())
+                .role(request.getRole())
+                .build();
+
+        return Mapper.toDTO(userRepository.save(user));
+    }
+
+    public User findEntityById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 }
