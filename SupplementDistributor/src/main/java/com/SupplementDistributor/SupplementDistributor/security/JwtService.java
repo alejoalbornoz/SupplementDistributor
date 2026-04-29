@@ -1,5 +1,7 @@
-package com.SupplementDistributor.SupplementDistributor.service;
+package com.SupplementDistributor.SupplementDistributor.security;
 
+
+import com.SupplementDistributor.SupplementDistributor.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -22,7 +24,11 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // Genera el token con el email y el rol adentro
+    // Acepta User directamente — soluciona el error de AuthService
+    public String generateToken(User user) {
+        return generateToken(user.getEmail(), user.getRole().name());
+    }
+
     public String generateToken(String email, String role) {
         return Jwts.builder()
                 .subject(email)
@@ -33,27 +39,22 @@ public class JwtService {
                 .compact();
     }
 
-    // Extrae el email del token
     public String extractEmail(String token) {
         return extractClaims(token).getSubject();
     }
 
-    // Extrae el rol del token
     public String extractRole(String token) {
         return extractClaims(token).get("role", String.class);
     }
 
-    // Valida que el token sea válido y no esté vencido
     public boolean isTokenValid(String token, String email) {
         return extractEmail(token).equals(email) && !isTokenExpired(token);
     }
 
-    // Verifica si el token está vencido
     private boolean isTokenExpired(String token) {
         return extractClaims(token).getExpiration().before(new Date());
     }
 
-    // Extrae todos los claims del token
     private Claims extractClaims(String token) {
         return Jwts.parser()
                 .verifyWith((javax.crypto.SecretKey) getSigningKey())

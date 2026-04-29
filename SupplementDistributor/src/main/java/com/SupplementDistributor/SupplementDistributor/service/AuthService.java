@@ -2,11 +2,11 @@ package com.SupplementDistributor.SupplementDistributor.service;
 
 import com.SupplementDistributor.SupplementDistributor.dto.request.LoginRequestDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.response.AuthResponseDTO;
-import com.SupplementDistributor.SupplementDistributor.dto.response.UserResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.exception.ResourceNotFoundException;
 import com.SupplementDistributor.SupplementDistributor.mapper.Mapper;
 import com.SupplementDistributor.SupplementDistributor.model.User;
 import com.SupplementDistributor.SupplementDistributor.repository.IUserRepository;
+import com.SupplementDistributor.SupplementDistributor.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
