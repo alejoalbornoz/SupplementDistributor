@@ -26,6 +26,15 @@ services:
     networks:
       - supplements_network
 
+  redis:
+    image: redis:7
+    container_name: supplements_redis
+    command: ["redis-server", "--save", "''", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    networks:
+      - supplements_network
+
 volumes:
   postgres_data:
 
