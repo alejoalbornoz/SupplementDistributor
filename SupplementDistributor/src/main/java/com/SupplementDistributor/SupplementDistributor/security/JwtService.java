@@ -55,6 +55,12 @@ public class JwtService {
         return extractClaims(token).getExpiration().before(new Date());
     }
 
+    //  Calcula los milisegundos que le quedan al token
+    public long getRemainingExpiration(String token) {
+        Date expiration = extractClaims(token).getExpiration();
+        return expiration.getTime() - System.currentTimeMillis();
+    }
+
     private Claims extractClaims(String token) {
         return Jwts.parser()
                 .verifyWith((javax.crypto.SecretKey) getSigningKey())

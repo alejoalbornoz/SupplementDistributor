@@ -7,6 +7,7 @@ import com.SupplementDistributor.SupplementDistributor.mapper.Mapper;
 import com.SupplementDistributor.SupplementDistributor.model.User;
 import com.SupplementDistributor.SupplementDistributor.repository.IUserRepository;
 import com.SupplementDistributor.SupplementDistributor.security.JwtService;
+import com.SupplementDistributor.SupplementDistributor.security.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,6 +20,7 @@ public class AuthService implements IAuthService{
     private final IUserRepository userRepository;
    private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     public AuthResponseDTO login(LoginRequestDTO request) {
@@ -40,6 +42,15 @@ public class AuthService implements IAuthService{
                 .type("Bearer")
                 .user(Mapper.toDTO(user))
                 .build();
+    }
+
+    @Override
+    public void logout(String token) {
+        long remainingExpiration = jwtService.getRemainingExpiration(token);
+
+        if(remainingExpiration > 0){
+            tokenBlacklistService.blacklistToken(token, remainingExpiration);
+        }
     }
 
 }

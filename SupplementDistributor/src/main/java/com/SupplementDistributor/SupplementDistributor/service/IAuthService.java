@@ -5,4 +5,5 @@ import com.SupplementDistributor.SupplementDistributor.dto.response.AuthResponse
 
 public interface IAuthService {
     public AuthResponseDTO login (LoginRequestDTO request);
+    void logout(String token);
 }
