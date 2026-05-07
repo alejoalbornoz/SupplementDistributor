@@ -1,8 +1,10 @@
 package com.SupplementDistributor.SupplementDistributor.controller;
 
 
+import com.SupplementDistributor.SupplementDistributor.dto.request.CreateCategoryRequestDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.response.CategoryResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.service.ICategoryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,9 +32,8 @@ public class CategoryController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CategoryResponseDTO> createCategory(
-            @RequestParam String name,
-            @RequestParam(required = false) String description) {
+            @Valid @RequestBody CreateCategoryRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(categoryService.createCategory(name, description));
+                .body(categoryService.createCategory(request.getName(), request.getDescription()));
     }
 }

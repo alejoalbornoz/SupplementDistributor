@@ -3,7 +3,11 @@ package com.SupplementDistributor.SupplementDistributor.controller;
 import com.SupplementDistributor.SupplementDistributor.dto.request.CreateOrderRequestDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.request.UpdateOrderStatusRequestDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.response.OrderResponseDTO;
+import com.SupplementDistributor.SupplementDistributor.exception.ResourceNotFoundException;
+import com.SupplementDistributor.SupplementDistributor.model.User;
+import com.SupplementDistributor.SupplementDistributor.repository.IUserRepository;
 import com.SupplementDistributor.SupplementDistributor.service.IOrderService;
+import com.SupplementDistributor.SupplementDistributor.service.IUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,8 +24,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderController {
     private final IOrderService orderService;
+    private final IUserRepository userRepository;
 
-    // ADMIN ve todas las órdenes, CLIENT solo las suyas
     @GetMapping
     public ResponseEntity<List<OrderResponseDTO>> getOrders(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -34,10 +38,10 @@ public class OrderController {
             return ResponseEntity.ok(orderService.getAllOrders());
         }
 
-        // Extraemos el userId del UserDetails
-        // Lo implementaremos en Security
-        Long userId = ((com.SupplementDistributor.SupplementDistributor.model.User) userDetails).getId();
-        return ResponseEntity.ok(orderService.getOrdersByUser(userId));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        return ResponseEntity.ok(orderService.getOrdersByUser(user.getId()));
     }
 
     @PostMapping
@@ -46,9 +50,11 @@ public class OrderController {
             @Valid @RequestBody CreateOrderRequestDTO request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = ((com.SupplementDistributor.SupplementDistributor.model.User) userDetails).getId();
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(orderService.createOrder(userId, request));
+                .body(orderService.createOrder(user.getId(), request));
     }
 
     @PatchMapping("/{id}/status")

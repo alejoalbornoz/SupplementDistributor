@@ -29,7 +29,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
-        // Si no hay token o no empieza con "Bearer " dejamos pasar
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -46,7 +46,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         final String email = jwtService.extractEmail(token);
 
-        // Si tiene email y no está autenticado todavía
+
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
