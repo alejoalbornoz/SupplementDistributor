@@ -6,7 +6,7 @@ import com.SupplementDistributor.SupplementDistributor.model.*;
 public class Mapper {
 
 
-    public static UserResponseDTO toDTO(User u) {  // ← cambiar el tipo de retorno
+    public static UserResponseDTO toDTO(User u) {
         if (u == null) return null;
         return UserResponseDTO.builder()
                 .id(u.getId())
