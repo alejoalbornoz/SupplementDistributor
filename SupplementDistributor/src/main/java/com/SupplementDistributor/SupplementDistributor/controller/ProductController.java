@@ -3,6 +3,7 @@ package com.SupplementDistributor.SupplementDistributor.controller;
 
 import com.SupplementDistributor.SupplementDistributor.dto.request.CreateProductRequestDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.request.UpdateProductRequestDTO;
+import com.SupplementDistributor.SupplementDistributor.dto.response.PageResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.response.ProductResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.service.IProductService;
 import jakarta.validation.Valid;
@@ -21,8 +22,11 @@ public class ProductController {
     private final IProductService productService;
 
     @GetMapping
-    public ResponseEntity<List<ProductResponseDTO>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<PageResponseDTO<ProductResponseDTO>> getAllProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy) {
+        return ResponseEntity.ok(productService.getAllProducts(page, size, sortBy));
     }
 
     @GetMapping("/{id}")

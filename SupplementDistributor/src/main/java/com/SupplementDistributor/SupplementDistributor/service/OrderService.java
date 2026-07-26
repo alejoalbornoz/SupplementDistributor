@@ -4,6 +4,7 @@ import com.SupplementDistributor.SupplementDistributor.dto.request.CreateOrderRe
 import com.SupplementDistributor.SupplementDistributor.dto.request.UpdateOrderStatusRequestDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.response.OrderResponseDTO;
 
+import com.SupplementDistributor.SupplementDistributor.dto.response.PageResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.exception.InsufficientStockException;
 import com.SupplementDistributor.SupplementDistributor.exception.ResourceNotFoundException;
 import com.SupplementDistributor.SupplementDistributor.mapper.Mapper;
@@ -14,6 +15,10 @@ import com.SupplementDistributor.SupplementDistributor.model.User;
 import com.SupplementDistributor.SupplementDistributor.repository.IOrderRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -70,19 +75,35 @@ public class OrderService implements IOrderService{
     }
 
     @Override
-    public List<OrderResponseDTO> getAllOrders() {
-        return orderRepository.findAll()
-                .stream()
-                .map(Mapper::toDTO)
-                .toList();
+    public PageResponseDTO<OrderResponseDTO> getAllOrders(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Order> orderPage = orderRepository.findAll(pageable);
+
+        return PageResponseDTO.<OrderResponseDTO>builder()
+                .content(orderPage.getContent().stream().map(Mapper::toDTO).toList())
+                .currentPage(orderPage.getNumber())
+                .pageSize(orderPage.getSize())
+                .totalElements(orderPage.getTotalElements())
+                .totalPages(orderPage.getTotalPages())
+                .isFirst(orderPage.isFirst())
+                .isLast(orderPage.isLast())
+                .build();
     }
 
     @Override
-    public List<OrderResponseDTO> getOrdersByUser(Long userId) {
-        return orderRepository.findByUserId(userId)
-                .stream()
-                .map(Mapper::toDTO)
-                .toList();
+    public PageResponseDTO<OrderResponseDTO> getOrdersByUser(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Order> orderPage = orderRepository.findByUserId(userId, pageable);
+
+        return PageResponseDTO.<OrderResponseDTO>builder()
+                .content(orderPage.getContent().stream().map(Mapper::toDTO).toList())
+                .currentPage(orderPage.getNumber())
+                .pageSize(orderPage.getSize())
+                .totalElements(orderPage.getTotalElements())
+                .totalPages(orderPage.getTotalPages())
+                .isFirst(orderPage.isFirst())
+                .isLast(orderPage.isLast())
+                .build();
     }
 
     @Override

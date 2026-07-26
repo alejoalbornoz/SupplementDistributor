@@ -3,6 +3,7 @@ package com.SupplementDistributor.SupplementDistributor.controller;
 import com.SupplementDistributor.SupplementDistributor.dto.request.CreateOrderRequestDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.request.UpdateOrderStatusRequestDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.response.OrderResponseDTO;
+import com.SupplementDistributor.SupplementDistributor.dto.response.PageResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.exception.ResourceNotFoundException;
 import com.SupplementDistributor.SupplementDistributor.model.User;
 import com.SupplementDistributor.SupplementDistributor.repository.IUserRepository;
@@ -27,7 +28,9 @@ public class OrderController {
     private final IUserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<List<OrderResponseDTO>> getOrders(
+    public ResponseEntity<PageResponseDTO<OrderResponseDTO>> getOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         boolean isAdmin = userDetails.getAuthorities()
@@ -35,13 +38,13 @@ public class OrderController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         if (isAdmin) {
-            return ResponseEntity.ok(orderService.getAllOrders());
+            return ResponseEntity.ok(orderService.getAllOrders(page, size));
         }
 
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        return ResponseEntity.ok(orderService.getOrdersByUser(user.getId()));
+        return ResponseEntity.ok(orderService.getOrdersByUser(user.getId(), page, size));
     }
 
     @PostMapping

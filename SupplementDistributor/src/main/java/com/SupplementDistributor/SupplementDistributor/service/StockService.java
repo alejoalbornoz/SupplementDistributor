@@ -1,6 +1,7 @@
 package com.SupplementDistributor.SupplementDistributor.service;
 
 import com.SupplementDistributor.SupplementDistributor.dto.request.StockMovementRequestDTO;
+import com.SupplementDistributor.SupplementDistributor.dto.response.PageResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.response.StockMovementResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.enums.MovementType;
 import com.SupplementDistributor.SupplementDistributor.exception.InsufficientStockException;
@@ -10,6 +11,10 @@ import com.SupplementDistributor.SupplementDistributor.model.StockMovement;
 import com.SupplementDistributor.SupplementDistributor.repository.IStockMovementRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -61,7 +66,18 @@ public class StockService implements IStockService{
     }
 
     @Override
-    public List<StockMovementResponseDTO> getStockHistory() {
-        return List.of();
+    public PageResponseDTO<StockMovementResponseDTO> getStockHistory(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<StockMovement> movementPage = stockMovementRepository.findAll(pageable);
+
+        return PageResponseDTO.<StockMovementResponseDTO>builder()
+                .content(movementPage.getContent().stream().map(Mapper::toDTO).toList())
+                .currentPage(movementPage.getNumber())
+                .pageSize(movementPage.getSize())
+                .totalElements(movementPage.getTotalElements())
+                .totalPages(movementPage.getTotalPages())
+                .isFirst(movementPage.isFirst())
+                .isLast(movementPage.isLast())
+                .build();
     }
 }

@@ -2,6 +2,7 @@ package com.SupplementDistributor.SupplementDistributor.service;
 
 import com.SupplementDistributor.SupplementDistributor.dto.request.CreateProductRequestDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.request.UpdateProductRequestDTO;
+import com.SupplementDistributor.SupplementDistributor.dto.response.PageResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.response.ProductResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.exception.ResourceNotFoundException;
 import com.SupplementDistributor.SupplementDistributor.mapper.Mapper;
@@ -9,6 +10,10 @@ import com.SupplementDistributor.SupplementDistributor.model.Category;
 import com.SupplementDistributor.SupplementDistributor.model.Product;
 import com.SupplementDistributor.SupplementDistributor.repository.IProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,11 +25,19 @@ public class ProductService implements IProductService{
     private final ICategoryService categoryService;
 
     @Override
-    public List<ProductResponseDTO> getAllProducts() {
-        return productRepository.findByActiveTrue()
-                .stream()
-                .map(Mapper::toDTO)
-                .toList();
+    public PageResponseDTO<ProductResponseDTO> getAllProducts(int page, int size, String sortBy) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<Product> productPage = productRepository.findByActiveTrue(pageable);
+
+        return PageResponseDTO.<ProductResponseDTO>builder()
+                .content(productPage.getContent().stream().map(Mapper::toDTO).toList())
+                .currentPage(productPage.getNumber())
+                .pageSize(productPage.getSize())
+                .totalElements(productPage.getTotalElements())
+                .totalPages(productPage.getTotalPages())
+                .isFirst(productPage.isFirst())
+                .isLast(productPage.isLast())
+                .build();
     }
 
     @Override

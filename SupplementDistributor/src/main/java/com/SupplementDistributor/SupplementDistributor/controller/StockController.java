@@ -1,6 +1,7 @@
 package com.SupplementDistributor.SupplementDistributor.controller;
 
 import com.SupplementDistributor.SupplementDistributor.dto.request.StockMovementRequestDTO;
+import com.SupplementDistributor.SupplementDistributor.dto.response.PageResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.dto.response.StockMovementResponseDTO;
 import com.SupplementDistributor.SupplementDistributor.service.IStockService;
 import jakarta.validation.Valid;
@@ -31,7 +32,9 @@ public class StockController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<StockMovementResponseDTO>> getStockHistory() {
-        return ResponseEntity.ok(stockService.getStockHistory());
+    public ResponseEntity<PageResponseDTO<StockMovementResponseDTO>> getStockHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(stockService.getStockHistory(page, size));
     }
 }
