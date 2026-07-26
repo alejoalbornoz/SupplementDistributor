@@ -26,9 +26,10 @@ A REST API for managing a gym supplement distribution company, including product
 ```properties
 # App
 spring.application.name=SupplementDistributor
+server.port=8080
 
 # Database
-spring.datasource.url=jdbc:postgresql://localhost:5432/supplements_db
+spring.datasource.url=jdbc:postgresql://localhost:5432/supplements_db?TimeZone=UTC
 spring.datasource.username=supplements_user
 spring.datasource.password=supplements_pass
 spring.datasource.driver-class-name=org.postgresql.Driver
@@ -36,8 +37,8 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 # JPA
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.jdbc.time_zone=UTC
 
 # JWT
 jwt.secret=your_secret_key
@@ -96,7 +97,7 @@ docker-compose down -v
 After running the app, insert the first admin user directly in the database. The password must be encrypted with BCrypt (use [bcrypt-generator.com](https://bcrypt-generator.com) with 10 rounds):
 
 ```sql
-INSERT INTO users (first_name, last_name, email, password, phone, role, active)
+INSERT INTO users (first_name, last_name, email, password, phone, role, active, created_at, updated_at)
 VALUES (
     'Admin',
     'User',
@@ -104,7 +105,9 @@ VALUES (
     '$2a$10$your_bcrypt_hashed_password',
     '1234567890',
     'ADMIN',
-    true
+    true,
+    NOW(),
+    NOW()
 );
 ```
 
@@ -135,7 +138,7 @@ On logout, the token is stored in **Redis** with a TTL equal to its remaining ex
 | `CLIENT` | Limited access: browse products, create and view own orders |
 
 ### Login
-POST /auth/login
+POST /api/auth/login
 Content-Type: application/json
 {
 "email": "admin@supplements.com",
@@ -163,7 +166,7 @@ Use the token in every subsequent request:
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 ### Logout
-POST /auth/logout
+POST /api/auth/logout
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 ---
@@ -174,16 +177,16 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
-| `POST` | `/auth/login` | Public | Login and get JWT token |
-| `POST` | `/auth/logout` | Authenticated | Invalidate JWT token |
+| `POST` | `/api/auth/login` | Public | Login and get JWT token |
+| `POST` | `/api/auth/logout` | Authenticated | Invalidate JWT token |
 
 ### Users (Admin only)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/users` | Get all users |
-| `GET` | `/users/{id}` | Get user by ID |
-| `POST` | `/users` | Create user |
+| `GET` | `/api/users` | Get all users |
+| `GET` | `/api/users/{id}` | Get user by ID |
+| `POST` | `/api/users` | Create user |
 
 #### Create User Request Body
 
@@ -202,19 +205,28 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
-| `GET` | `/categories` | Public | Get all categories |
-| `GET` | `/categories/{id}` | Public | Get category by ID |
-| `POST` | `/categories` | Admin | Create category |
+| `GET` | `/api/categories` | Public | Get all categories |
+| `GET` | `/api/categories/{id}` | Public | Get category by ID |
+| `POST` | `/api/categories` | Admin | Create category |
+
+#### Create Category Request Body
+
+```json
+{
+    "name": "Proteína",
+    "description": "Suplementos proteicos"
+}
+```
 
 ### Products
 
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
-| `GET` | `/products` | Public | Get all active products |
-| `GET` | `/products/{id}` | Public | Get product by ID |
-| `POST` | `/products` | Admin | Create product |
-| `PATCH` | `/products/{id}` | Admin | Update product |
-| `DELETE` | `/products/{id}` | Admin | Soft delete product |
+| `GET` | `/api/products` | Public | Get all active products |
+| `GET` | `/api/products/{id}` | Public | Get product by ID |
+| `POST` | `/api/products` | Admin | Create product |
+| `PATCH` | `/api/products/{id}` | Admin | Update product |
+| `DELETE` | `/api/products/{id}` | Admin | Soft delete product |
 
 #### Create Product Request Body
 
@@ -235,9 +247,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/stock/in` | Register stock entry (purchase from supplier) |
-| `POST` | `/stock/out` | Register stock exit (manual adjustment) |
-| `GET` | `/stock/history` | Get all stock movements |
+| `POST` | `/api/stock/in` | Register stock entry (purchase from supplier) |
+| `POST` | `/api/stock/out` | Register stock exit (manual adjustment) |
+| `GET` | `/api/stock/history` | Get all stock movements |
 
 #### Stock Movement Request Body
 
@@ -253,9 +265,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
-| `GET` | `/orders` | Admin/Client | Get orders (Admin sees all, Client sees own) |
-| `POST` | `/orders` | Client | Create order |
-| `PATCH` | `/orders/{id}/status` | Admin | Update order status |
+| `GET` | `/api/orders` | Admin/Client | Get orders (Admin sees all, Client sees own) |
+| `POST` | `/api/orders` | Client | Create order |
+| `PATCH` | `/api/orders/{id}/status` | Admin | Update order status |
 
 #### Create Order Request Body
 
@@ -288,10 +300,10 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
-| `POST` | `/shipments` | Admin | Create shipment |
-| `GET` | `/shipments/order/{orderId}` | Authenticated | Get shipment by order |
-| `GET` | `/shipments/tracking/{code}` | Authenticated | Track shipment by code |
-| `PATCH` | `/shipments/{id}/status` | Admin | Update shipment status |
+| `POST` | `/api/shipments` | Admin | Create shipment |
+| `GET` | `/api/shipments/order/{orderId}` | Authenticated | Get shipment by order |
+| `GET` | `/api/shipments/tracking/{code}` | Authenticated | Track shipment by code |
+| `PATCH` | `/api/shipments/{id}/status` | Admin | Update shipment status |
 
 #### Create Shipment Request Body
 
@@ -315,12 +327,12 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/reports/top-products` | Most sold products |
-| `GET` | `/reports/billing?start=&end=` | Billing by period |
-| `GET` | `/reports/low-stock?threshold=10` | Products with low stock |
+| `GET` | `/api/reports/top-products` | Most sold products |
+| `GET` | `/api/reports/billing?start=&end=` | Billing by period |
+| `GET` | `/api/reports/low-stock?threshold=10` | Products with low stock |
 
 #### Billing Report Example
-GET /reports/billing?start=2024-01-01T00:00:00&end=2024-01-31T23:59:59
+GET /api/reports/billing?start=2024-01-01T00:00:00&end=2024-01-31T23:59:59
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 ---
@@ -356,11 +368,13 @@ pm.environment.set("token", response.token);
 
 **Price snapshot on order items** — `OrderItem` stores the unit price at the time of purchase. This ensures historical orders are not affected by future price changes on products.
 
-**Redis token blacklist** — On logout, JWT tokens are stored in Redis with a TTL equal to their remaining expiration time. Redis automatically removes expired entries keeping the blacklist clean with no manual maintenance required. This approach avoids unnecessary database queries while still preventing token reuse after logout.
+**Redis token blacklist** — On logout, JWT tokens are stored in Redis with a TTL equal to its remaining expiration time. Redis automatically removes expired entries keeping the blacklist clean with no manual maintenance required. This approach avoids unnecessary database queries while still preventing token reuse after logout.
 
 **Interface + Implementation pattern on services** — Every service is defined as an interface (`IUserService`) and implemented separately (`UserService`). Controllers always inject the interface, making the implementation swappable without touching the controller layer.
 
 **Centralized mapping** — All entity to DTO conversions are handled by a single `Mapper` class with static methods, avoiding repeated mapping logic across services.
+
+**TimeZone configuration** — The JDBC connection URL includes `?TimeZone=UTC` to avoid compatibility issues between the Windows system timezone and the PostgreSQL Docker container.
 
 ---
 
