@@ -16,15 +16,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 
 @Service
 @RequiredArgsConstructor
-public class ProductService implements IProductService{
+public class ProductService implements IProductService {
+
     private final IProductRepository productRepository;
     private final ICategoryService categoryService;
 
+    // ← guarda el resultado en Redis con key "products"
     @Override
+    @Cacheable(value = "products", key = "'all_' + #page + '_' + #size + '_' + #sortBy")
     public PageResponseDTO<ProductResponseDTO> getAllProducts(int page, int size, String sortBy) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
         Page<Product> productPage = productRepository.findByActiveTrue(pageable);
@@ -45,7 +51,9 @@ public class ProductService implements IProductService{
         return Mapper.toDTO(findActiveById(id));
     }
 
+    // ← cuando se crea un producto, borra el caché
     @Override
+    @CacheEvict(value = "products", allEntries = true)
     public ProductResponseDTO createProduct(CreateProductRequestDTO request) {
         Category category = categoryService.getCategoryEntityById(request.getCategoryId());
 
@@ -58,13 +66,13 @@ public class ProductService implements IProductService{
                 .category(category)
                 .build();
 
-
         return Mapper.toDTO(productRepository.save(product));
     }
 
+    // ← cuando se actualiza un producto, borra el caché
     @Override
+    @CacheEvict(value = "products", allEntries = true)
     public ProductResponseDTO updateProduct(Long id, UpdateProductRequestDTO request) {
-
         Product product = findActiveById(id);
 
         if (request.getName() != null) product.setName(request.getName());
@@ -80,18 +88,26 @@ public class ProductService implements IProductService{
         return Mapper.toDTO(productRepository.save(product));
     }
 
+    // ← cuando se elimina un producto, borra el caché
     @Override
+    @CacheEvict(value = "products", allEntries = true)
     public void deleteProduct(Long id) {
         Product product = findActiveById(id);
         product.setActive(false);
         productRepository.save(product);
     }
 
-
     @Override
     public Product findActiveById(Long id) {
         return productRepository.findById(id)
                 .filter(Product::getActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+    }
+
+    @Override
+    @CacheEvict(value = "products", allEntries = true)
+    public void clearProductsCache() {
+        // Spring ejecuta el @CacheEvict automáticamente
+        // el método puede quedar vacío
     }
 }

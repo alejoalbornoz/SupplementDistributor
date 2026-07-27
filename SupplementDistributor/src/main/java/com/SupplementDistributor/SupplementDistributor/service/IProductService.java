@@ -15,4 +15,5 @@ public interface IProductService {
     ProductResponseDTO updateProduct(Long id, UpdateProductRequestDTO request);
     void deleteProduct(Long id);
     Product findActiveById(Long id);
+    void clearProductsCache();
 }
