@@ -112,15 +112,21 @@ VALUES (
 ```
 
 Access pgAdmin at `http://localhost:5050`
+
+```
 Email:    admin@supplements.com
 Password: admin123
+```
 
 Connect to the server with:
+
+```
 Host:     postgres
 Port:     5432
 Database: supplements_db
 Username: supplements_user
 Password: supplements_pass
+```
 
 ---
 
@@ -138,12 +144,16 @@ On logout, the token is stored in **Redis** with a TTL equal to its remaining ex
 | `CLIENT` | Limited access: browse products, create and view own orders |
 
 ### Login
+
+```
 POST /api/auth/login
 Content-Type: application/json
+
 {
-"email": "admin@supplements.com",
-"password": "yourpassword"
+    "email": "admin@supplements.com",
+    "password": "yourpassword"
 }
+```
 
 Response:
 
@@ -163,11 +173,17 @@ Response:
 ```
 
 Use the token in every subsequent request:
+
+```
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+```
 
 ### Logout
+
+```
 POST /api/auth/logout
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+```
 
 ---
 
@@ -222,7 +238,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
-| `GET` | `/api/products` | Public | Get all active products |
+| `GET` | `/api/products` | Public | Get all active products (paginated) |
 | `GET` | `/api/products/{id}` | Public | Get product by ID |
 | `POST` | `/api/products` | Admin | Create product |
 | `PATCH` | `/api/products/{id}` | Admin | Update product |
@@ -243,13 +259,39 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 > **Note:** Deleting a product performs a **soft delete** — the product is marked as `active = false` and never permanently removed. This preserves historical order data integrity.
 
+#### Pagination Parameters
+
+```
+GET /api/products?page=0&size=10&sortBy=name
+```
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `page` | `0` | Page number (zero-based) |
+| `size` | `10` | Items per page |
+| `sortBy` | `name` | Field to sort by |
+
+#### Paginated Response
+
+```json
+{
+    "content": [...],
+    "currentPage": 0,
+    "pageSize": 10,
+    "totalElements": 150,
+    "totalPages": 15,
+    "isFirst": true,
+    "isLast": false
+}
+```
+
 ### Stock (Admin only)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/stock/in` | Register stock entry (purchase from supplier) |
 | `POST` | `/api/stock/out` | Register stock exit (manual adjustment) |
-| `GET` | `/api/stock/history` | Get all stock movements |
+| `GET` | `/api/stock/history` | Get all stock movements (paginated) |
 
 #### Stock Movement Request Body
 
@@ -265,7 +307,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
-| `GET` | `/api/orders` | Admin/Client | Get orders (Admin sees all, Client sees own) |
+| `GET` | `/api/orders` | Admin/Client | Get orders — Admin sees all, Client sees own (paginated) |
 | `POST` | `/api/orders` | Client | Create order |
 | `PATCH` | `/api/orders/{id}/status` | Admin | Update order status |
 
@@ -332,15 +374,43 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 | `GET` | `/api/reports/low-stock?threshold=10` | Products with low stock |
 
 #### Billing Report Example
+
+```
 GET /api/reports/billing?start=2024-01-01T00:00:00&end=2024-01-31T23:59:59
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+```
+
+---
+
+## 🧪 Tests
+
+The project includes **41 tests** covering unit and integration layers.
+
+```bash
+# Run all tests
+./mvnw test
+
+# Run a specific test class
+./mvnw test -Dtest=ProductServiceTest
+```
+
+| Test Class | Type | Coverage |
+|---|---|---|
+| `ProductServiceTest` | Unit | getAllProducts, getById, create, update, delete |
+| `AuthServiceTest` | Unit | login, logout, token blacklist |
+| `StockServiceTest` | Unit | stockIn, stockOut, insufficient stock, history |
+| `OrderServiceTest` | Unit | createOrder, total calculation, status update |
+| `ProductControllerTest` | Integration | endpoints, roles, validation, security |
 
 ---
 
 ## 📖 API Documentation
 
 Swagger UI is available at:
+
+```
 http://localhost:8080/swagger-ui.html
+```
 
 ---
 
@@ -373,6 +443,8 @@ pm.environment.set("token", response.token);
 **Interface + Implementation pattern on services** — Every service is defined as an interface (`IUserService`) and implemented separately (`UserService`). Controllers always inject the interface, making the implementation swappable without touching the controller layer.
 
 **Centralized mapping** — All entity to DTO conversions are handled by a single `Mapper` class with static methods, avoiding repeated mapping logic across services.
+
+**Pagination** — Products, orders and stock history endpoints support pagination via `page`, `size` and `sortBy` query parameters, returning a structured response with metadata to avoid loading all records at once.
 
 **TimeZone configuration** — The JDBC connection URL includes `?TimeZone=UTC` to avoid compatibility issues between the Windows system timezone and the PostgreSQL Docker container.
 
